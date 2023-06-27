@@ -9,3 +9,9 @@ variable "host_name" {
   description = "Domain name of OpenCTI"
   default     = ""
 }
+
+variable "deploy_opencti_connector" {
+  type        = bool
+  description = "Should the OpenCTI connector be deployed?"
+  default     = true
+}

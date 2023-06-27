@@ -14,6 +14,7 @@ locals {
 }
 
 resource "azapi_resource" "opencti_connector" {
+  count                     = var.deploy_opencti_connector ? 1 : 0
   type                      = "Microsoft.Web/customApis@2016-06-01"
   name                      = local.connector_name
   location                  = azurerm_resource_group.rg.location
@@ -136,6 +137,7 @@ resource "azapi_resource" "opencti_connector" {
 }
 
 resource "azapi_resource" "opencti_connector_connection" {
+  count     = var.deploy_opencti_connector ? 1 : 0
   type      = "Microsoft.Web/connections@2016-06-01"
   name      = "${local.connector_name}-${local.getindicatorsstream_playbook_name}"
   location  = azurerm_resource_group.rg.location
@@ -147,7 +149,7 @@ resource "azapi_resource" "opencti_connector_connection" {
                 "customParameterValues": {
                 },
                 "api": {
-                    "id": "${azapi_resource.opencti_connector.id}"
+                    "id": "${azapi_resource.opencti_connector.0.id}"
                 }
             }
             }
@@ -157,6 +159,7 @@ BODY
 }
 
 resource "azapi_resource" "opencti_connector_graph_connection" {
+  count                     = var.deploy_opencti_connector ? 1 : 0
   type                      = "Microsoft.Web/connections@2016-06-01"
   name                      = "MicrosoftGraphSecurity-${local.importtosentinel_playbook_name}"
   location                  = azurerm_resource_group.rg.location
@@ -179,6 +182,7 @@ BODY
 }
 
 resource "azurerm_logic_app_workflow" "opencti_importtosentinel" {
+  count               = var.deploy_opencti_connector ? 1 : 0
   name                = local.importtosentinel_playbook_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -198,7 +202,7 @@ BODY
     "$connections" = <<BODY
 {
   "microsoftgraphsecurity": {
-    "connectionId": "${azapi_resource.opencti_connector_graph_connection.id}",
+    "connectionId": "${azapi_resource.opencti_connector_graph_connection.0.id}",
     "connectionName": "MicrosoftGraphSecurity-${local.importtosentinel_playbook_name}",
     "id": "/subscriptions/${var.azurerm_provider_subscription_id}/providers/Microsoft.Web/locations/${azurerm_resource_group.rg.location}/managedApis/microsoftgraphsecurity",
     "connectionProperties": {
@@ -225,8 +229,9 @@ BODY
 }
 
 resource "azurerm_logic_app_trigger_custom" "opencti_importtosentinel" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Batch_messages"
-  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.0.id
 
   body = <<BODY
 {
@@ -250,8 +255,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Select" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Select"
-  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.0.id
 
   body = <<BODY
 {
@@ -269,8 +275,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Submit_multiple_tiIndicators" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Submit_multiple_tiIndicators"
-  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_importtosentinel.0.id
 
   body = <<BODY
 {
@@ -299,6 +306,7 @@ BODY
 }
 
 resource "azurerm_logic_app_workflow" "opencti_getindicators" {
+  count               = var.deploy_opencti_connector ? 1 : 0
   name                = local.getindicatorsstream_playbook_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -318,7 +326,7 @@ BODY
     "$connections" = <<BODY
 {
   "OpenCTICustomConnector": {
-    "connectionId": "${azapi_resource.opencti_connector_connection.id}",
+    "connectionId": "${azapi_resource.opencti_connector_connection.0.id}",
     "connectionName": "${local.connector_name}-${local.getindicatorsstream_playbook_name}",
     "id": "/subscriptions/${var.azurerm_provider_subscription_id}/resourceGroups/${azurerm_resource_group.rg.name}/providers/Microsoft.Web/customApis/${local.connector_name}"
   }
@@ -336,8 +344,9 @@ BODY
 }
 
 resource "azurerm_logic_app_trigger_custom" "opencti_getindicators" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Sliding_Window"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -354,8 +363,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "openCTI_Parse_JSON" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Parse_JSON"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
  {
@@ -422,8 +432,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Run_Sample_GraphQL_Query_to_check_Auth_" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Run_Sample_GraphQL_Query_to_check_Auth_"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -455,8 +466,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Parse_OpenCTI_response" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Parse_OpenCTI_response"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -505,8 +517,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Terminate_in_case_of_JSON_Parse_Failed" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Terminate_in_case_of_JSON_Parse_Failed"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -532,8 +545,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Initialize_variable_StartTime" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Initialize_variable_StartTime"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -559,8 +573,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Initialize_variable_Cursor" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Initialize_variable_Cursor"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -585,8 +600,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Initialize_variable_azureTenantId" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Initialize_variable_azureTenantId"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -612,8 +628,9 @@ BODY
 }
 
 resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" {
+  count        = var.deploy_opencti_connector ? 1 : 0
   name         = "Until_hasNextPage_is_false"
-  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.id
+  logic_app_id = azurerm_logic_app_workflow.opencti_getindicators.0.id
 
   body = <<BODY
 {
@@ -790,7 +807,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
@@ -830,7 +847,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
@@ -870,7 +887,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
@@ -910,7 +927,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
@@ -951,7 +968,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
@@ -991,7 +1008,7 @@ resource "azurerm_logic_app_action_custom" "opencti_Until_hasNextPage_is_false" 
                                             "host": {
                                                 "triggerName": "Batch_messages",
                                                 "workflow": {
-                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.id}"
+                                                    "id": "${azurerm_logic_app_workflow.opencti_importtosentinel.0.id}"
                                                 }
                                             }
                                         }
