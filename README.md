@@ -8,7 +8,7 @@ There is some additional steps needed after deploying, like adding in the API ke
 
 Also the Managed Identity needs to be allowed access to Microsoft Graph.
 
-´´´
+```powershell
 $DestinationTenantId = "<<REPLACE-WITH_TENANT-ID>>"
 $MsiName = "OpenCTI-ImportToSentinel" # Name of system-assigned or user-assigned managed service identity. (System-assigned use same name as resource).
 
@@ -39,7 +39,7 @@ foreach($AppRole in $oAppRole)
     -BodyParameter $oAppRoleAssignment `
     -Verbose
 }
-´´´
+```
 
 ## Enternal references
 
